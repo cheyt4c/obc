@@ -38,6 +38,12 @@ typedef struct {
   uint32_t sensor;
 } last_working_t;
 
+
+
+
+// Function forward declarations
+void checkSubsystemHealth(void);
+
 void setup() {
   Serial.begin(9600);
   Wire.begin();
