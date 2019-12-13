@@ -31,18 +31,26 @@ typedef struct {
 } sensor_packet_t;
 
 
-//Struct to track OBC internal data
+//Structs to track OBC internal data
 
 //This struct tracks the last time in millisecond the subsystem returns no error after a system check poll.
 typedef struct {
   uint32_t sensor;
 } last_working_t;
 
+last_working_t system_last_working;
 
+//This struct tracks the last error code received from each subsystem. If it is 255 then there is a bus error
+typedef struct {
+  uint8_t sensor;
+} error_t;
 
+error_t system_err;
 
 // Function forward declarations
 void checkSubsystemHealth(void);
+void restartSubsystem(void);
+void sendData(void);
 
 void setup() {
   Serial.begin(9600);
@@ -60,4 +68,29 @@ void loop() {
   //Poll sensor module for current sensor data every 3 seconds, and then send it to groundstation through UHF comms module
 
   delay(1);
+}
+
+/*
+* This function will poll each subsystem to check whether they are healthy or not
+* where it is healthy if the error number they returned is 0, as in there is no error, and 
+* there is no bus error. For all the subsystems that follow the specification
+* the error code is the first byte that are returned from the I2C request command
+*/
+void checkSubsystemHealth(void){
+  uint8_t check = 0;
+  // Copy paste the codes until the next line comment to check for other subsystems
+  check = Wire.requestFrom(ADDR_SENSOR,1);
+  if (check != 1)
+  {
+    system_err.sensor = 255; //If there is a bus error then 
+  }
+  while (Wire.available())
+  {
+    system_err.sensor = Wire.read();
+  }
+  if (system_err.sensor == 0) //If there is no error
+  {
+      system_last_working.sensor = millis();
+  }
+  //Copy paste until here
 }
