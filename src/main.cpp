@@ -56,6 +56,7 @@ struct system_state_t {
   // event types
   uint32_t lastHealthCheckMillis;
   uint32_t lastReadMillis;
+  uint32_t lastWriteMillis;
   // error tracking (for watchdog)
   uint32_t lastWorkingMillis;
   uint8_t lastError;
@@ -63,14 +64,19 @@ struct system_state_t {
 
 //OBC event intervals (ms)
 static char const *SENSOR_LABEL = "Sensor";
+static char const *COMMS_LABEL = "Comms";
 #define SENSOR_HEALTH_EVENT_MS 1000
 #define SENSOR_READ_EVENT_MS 3000
 #define SENSOR_RESET_EVENT_MS 5000
 
-//Initialisation
+#define COMMS_WRITE_EVENT_MS 10000
+
+//Initialisation (globals)
+HardwareSerial &SerialComms = Serial1;
 FastCRC32 CRC32;
 static system_state_t sensorState = {0};
 static sensor_packet_t sensorData = {0};
+static system_state_t commsState = {0};
 
 //############################################################
 // Function forward declarations
@@ -83,7 +89,7 @@ size_t getDataSize(sensor_packet_t& packet);
 bool isCrcMatch(uint32_t sentCrc, uint8_t *buff, size_t total_bytes);
 void eventReadSensorModule(void);
 
-void sendData(void);
+void eventWriteCommsModule(void);
 
 void printHex(uint8_t *buf, size_t len, bool has_newline=true);
 void printTag(char const *label, uint32_t rcvTime);
@@ -92,6 +98,7 @@ void printSensorData(char const *label, sensor_packet_t& data, uint32_t rcvTime)
 //############################################################
 void setup() {
   Serial.begin(9600);
+  SerialComms.begin(9600);
   Wire.begin();
 }
 
@@ -104,13 +111,8 @@ void loop() {
   //Handle reset events - if the subsystem is hanging or if 
   //it returns a error message, after 5 second power cycle the subsystem
 
-
   //Handle write events
-  
-  //poll sensor module for current sensor data every 
-  //3 seconds, and then send it to groundstation through UHF comms module
-
-
+  eventWriteCommsModule();
 }
 
 //############################################################
@@ -211,6 +213,19 @@ void eventReadSensorModule(void) {
   }
 }
 
+
+//############################################################
+void eventWriteCommsModule(void) {
+  uint32_t now = millis();
+  if ((now - commsState.lastWriteMillis) < COMMS_WRITE_EVENT_MS) return;
+  //send sensor module pkt
+  uint8_t *pktPtr = reinterpret_cast<uint8_t*>(&sensorData);
+  size_t pktSize = sizeof(sensor_packet_t);
+  SerialComms.write(pktPtr, pktSize);
+  snprintf(printBuf, PRINT_BUF_SIZE, "Wrote %lu bytes to %s\n", pktSize, COMMS_LABEL);
+  Serial.print(printBuf);
+  commsState.lastWriteMillis = now;
+}
 
 //############################################################
 //Debugging contents common to other subsystems
