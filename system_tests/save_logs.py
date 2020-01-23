@@ -23,7 +23,7 @@ SENSOR_PORT = 'COM11'
 OBC_PORT = 'COM12'
 LOG_DIR = 'terminal_logs'
 
-STREAM_OUTPUT = False # set True to stream all output coming from any enabled serial port
+STREAM_OUTPUT = True # set True to stream all output coming from any enabled serial port
 
 # Note: the analysis of the OBC output assumes specific string match conditions. If these
 # strings do not match then the analysis will fail.
@@ -38,7 +38,7 @@ TAG_LEN = max(len(SENSOR_TAG), len(OBC_TAG), len(SUCCESS_TAG), len(FAIL_TAG))
 class SerialReader(threading.Thread):
     def __init__(self, port, baud, filepath, output_q, label):
         super().__init__()
-        self.ser = serial.Serial(port, baud)
+        self.ser = serial.Serial(port, baud, timeout=1)
         self.filepath = filepath
         self.output_q = output_q
         self.label = label
@@ -48,6 +48,8 @@ class SerialReader(threading.Thread):
         with open(self.filepath, 'w') as fp:
             while not self.is_stopped:
                 line = self.ser.readline()
+                if len(line) == 0: # timeout
+                    continue
                 try:
                     line = line.decode('utf-8').replace('\r','')
                     fp.write(line)
@@ -123,6 +125,7 @@ def realtime_analysis(print_q, tag_len):
                             continue
                         found = False
                         
+                        sensor_line = None
                         while not sensor_lines.empty(): # compare to sensor output
                             sensor_line = sensor_lines.get()
                             sensor_csv = sensor_line.split(',')
