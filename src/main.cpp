@@ -98,6 +98,11 @@ void printHex(uint8_t *buf, size_t len, bool has_newline=true);
 void printTag(char const *label, uint32_t rcvTime);
 void printSensorData(char const *label, sensor_packet_t& data, uint32_t rcvTime);
 
+
+void watchdogSetup(void)
+{
+// do what you want here
+}
 //############################################################
 void setup() {
   Serial.begin(9600);
@@ -106,7 +111,8 @@ void setup() {
 
   pinMode(SENSOR_RST_PIN,OUTPUT);
   digitalWrite(SENSOR_RST_PIN,LOW);
-
+  Serial.println("Starting from reset");
+  watchdogEnable(1000);
 }
 
 //############################################################
@@ -118,6 +124,8 @@ void loop() {
   //Handle reset events - if the subsystem is hanging or if 
   //it returns a error message, after 5 second power cycle the subsystem
   restartSubsystem(&sensorState ,SENSOR_RST_PIN, 5000);
+
+  watchdogReset();
 
   //Handle write events
   eventWriteCommsModule();
