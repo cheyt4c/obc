@@ -17,6 +17,9 @@ static char printBuf[PRINT_BUF_SIZE];
 #define NO_ERROR 0
 #define BUS_ERROR 255
 
+//Pin defs for watchdog reset
+#define SENSOR_RST_PIN 5
+
 typedef struct {
     uint8_t err;
     uint8_t pad[3];
@@ -83,7 +86,7 @@ static system_state_t commsState = {0};
 uint8_t readI2c(int addrI2c, uint8_t *buff, size_t bytes);
 void updateErrorState(system_state_t& state, uint8_t errorCode);
 void eventCheckSubsystemHealth(int addrI2c, system_state_t& state, uint32_t eventIntervalMillis);
-void restartSubsystem(void);
+void restartSubsystem(system_state_t *system , uint8_t pin, uint32_t timeoutMillis);
 
 size_t getDataSize(sensor_packet_t& packet);
 bool isCrcMatch(uint32_t sentCrc, uint8_t *buff, size_t total_bytes);
@@ -100,6 +103,10 @@ void setup() {
   Serial.begin(9600);
   SerialComms.begin(9600);
   Wire.begin();
+
+  pinMode(SENSOR_RST_PIN,OUTPUT);
+  digitalWrite(SENSOR_RST_PIN,HIGH);
+
 }
 
 //############################################################
@@ -110,6 +117,7 @@ void loop() {
 
   //Handle reset events - if the subsystem is hanging or if 
   //it returns a error message, after 5 second power cycle the subsystem
+  restartSubsystem(&sensorState ,SENSOR_RST_PIN, 5000);
 
   //Handle write events
   eventWriteCommsModule();
@@ -134,9 +142,14 @@ uint8_t readI2c(int addrI2c, uint8_t *buff, size_t bytes) {
 }
 
 void updateErrorState(system_state_t& state, uint8_t errorCode) {
+  Serial.println("UPdating");
+  Serial.println(errorCode);
   state.lastError = errorCode;
   if (state.lastError == NO_ERROR) {
+    Serial.println("No error");
     state.lastWorkingMillis = millis();
+      Serial.println(state.lastWorkingMillis);
+
   }
 }
 
@@ -253,4 +266,16 @@ void printSensorData(char const *label, sensor_packet_t& data, uint32_t rcvTime)
           data.pressure, data.lat, data.lng, 
           data.accX, data.accY, data.accZ, data.rotX, data.rotY, data.rotZ);
   Serial.print(printBuf);
+}
+
+void restartSubsystem(system_state_t *system, uint8_t pin, uint32_t timeoutMillis){
+  // Restart subsystem if it above the timeoutMillis value
+  if ((millis() - system->lastWorkingMillis) > timeoutMillis)
+  {
+    Serial.println("Reseting system");
+    digitalWrite(pin,LOW);
+    delay(10);
+    digitalWrite(pin,HIGH);
+    system->lastWorkingMillis = millis(); //This assumes that the system recovers after restart
+  }
 }
