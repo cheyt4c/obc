@@ -105,7 +105,7 @@ void setup() {
   Wire.begin();
 
   pinMode(SENSOR_RST_PIN,OUTPUT);
-  digitalWrite(SENSOR_RST_PIN,HIGH);
+  digitalWrite(SENSOR_RST_PIN,LOW);
 
 }
 
@@ -273,9 +273,9 @@ void restartSubsystem(system_state_t *system, uint8_t pin, uint32_t timeoutMilli
   if ((millis() - system->lastWorkingMillis) > timeoutMillis)
   {
     Serial.println("Reseting system");
-    digitalWrite(pin,LOW);
-    delay(10);
     digitalWrite(pin,HIGH);
+    delay(10);
+    digitalWrite(pin,LOW);
     system->lastWorkingMillis = millis(); //This assumes that the system recovers after restart
   }
 }
