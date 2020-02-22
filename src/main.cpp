@@ -150,13 +150,13 @@ uint8_t readI2c(int addrI2c, uint8_t *buff, size_t bytes) {
 }
 
 void updateErrorState(system_state_t& state, uint8_t errorCode) {
-  Serial.println("UPdating");
-  Serial.println(errorCode);
+  //Serial.println("UPdating");
+  //Serial.println(errorCode);
   state.lastError = errorCode;
   if (state.lastError == NO_ERROR) {
-    Serial.println("No error");
+    //Serial.println("No error");
     state.lastWorkingMillis = millis();
-      Serial.println(state.lastWorkingMillis);
+      //Serial.println(state.lastWorkingMillis);
 
   }
 }
