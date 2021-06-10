@@ -243,9 +243,10 @@ void eventWriteCommsModule(void) {
   if ((now - commsState.lastWriteMillis) < COMMS_WRITE_EVENT_MS) return;
   //send sensor module pkt
   uint8_t *pktPtr = reinterpret_cast<uint8_t*>(&sensorData);
-  size_t pktSize = sizeof(sensor_packet_t);
-  SerialComms.write(pktPtr, pktSize);
-  snprintf(printBuf, PRINT_BUF_SIZE, "Wrote %lu bytes to %s\n", pktSize, COMMS_LABEL);
+  char base64buf[256];
+  int encodedLength = Base64.encodedLength(sizeof(sensor_packet_t));
+  SerialComms.write(base64buf, encodedLength);
+  snprintf(printBuf, PRINT_BUF_SIZE, "Wrote %lu bytes to %s\n", encodedLength, COMMS_LABEL);
   Serial.print(printBuf);
   commsState.lastWriteMillis = now;
 }
