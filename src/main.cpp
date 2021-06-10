@@ -248,6 +248,8 @@ void eventWriteCommsModule(void) {
   SerialComms.write(base64buf, encodedLength);
   snprintf(printBuf, PRINT_BUF_SIZE, "Wrote %lu bytes to %s\n", encodedLength, COMMS_LABEL);
   Serial.print(printBuf);
+  Serial.write(base64buf, encodedLength);
+  Serial.println("");
   commsState.lastWriteMillis = now;
 }
 
