@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include <stdio.h>
 #include <FastCRC.h>
+#include <Base64.h>
+
 
 #define PRINT_BUF_SIZE 200
 static char printBuf[PRINT_BUF_SIZE];
